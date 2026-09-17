@@ -1,0 +1,58 @@
+# Save this file as: .github/workflows/refresh-briefing.yml  in your DrBKMask repo
+#
+# What this does:
+#   Runs on a schedule (cron, in UTC) and on manual trigger, executes a build
+#   script that regenerates market-briefing.html with fresh data, then commits
+#   and pushes the updated file so GitHub Pages serves the new version.
+#
+# IMPORTANT — cron is UTC, and India has no daylight saving:
+#   8:30 AM IST = 3:00 AM UTC every day  ->  cron: '0 3 * * *'
+#   GitHub Actions cron does not guarantee the exact minute during high load,
+#   so treat 8:30 as "approximately, within a few minutes" unless you use a
+#   paid runner tier with tighter scheduling guarantees.
+#
+# This workflow assumes a build script at scripts/build-briefing.js (see the
+# companion file). You'll need to write the actual data-fetching logic —
+# see README-setup.md for why this can't just scrape Bloomberg/CNBC/ET/
+# Moneycontrol directly, and what to use instead.
+
+name: Refresh daily market briefing
+
+on:
+  schedule:
+    - cron: '0 3 * * 1-5'   # 08:30 IST, Monday–Friday only (skip weekends: no market)
+  workflow_dispatch: {}      # lets you trigger it manually from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install   # add a package.json with whatever HTTP/RSS libs you use
+
+      - name: Build fresh briefing
+        run: node scripts/build-briefing.js
+        env:
+          # Put any API keys here as GitHub Actions "Secrets", never hard-coded:
+          # NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          # ALPHAVANTAGE_KEY: ${{ secrets.ALPHAVANTAGE_KEY }}
+          PLACEHOLDER: 'set-your-secrets-in-repo-settings'
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "briefing-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add market-briefing.html
+          git diff --quiet --cached || git commit -m "Auto-refresh daily briefing"
+          git push

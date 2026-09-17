@@ -32,6 +32,38 @@
 const fs = require('fs');
 const path = require('path');
 
+// ---------------------------------------------------------------------------
+// REAL, WORKING: Finnhub market-status
+//
+// Free-tier endpoint. Tells you whether a given exchange is open right now —
+// it does NOT return prices, index levels, gold, or crude (that's a separate
+// problem, see fetchIndexLevels below). Get a free API key at
+// https://finnhub.io/register, then set it as a GitHub Actions secret named
+// FINNHUB_API_KEY (repo Settings -> Secrets and variables -> Actions).
+// ---------------------------------------------------------------------------
+async function fetchMarketStatus(exchangeCode) {
+  const token = process.env.FINNHUB_API_KEY;
+  if (!token) {
+    console.warn('FINNHUB_API_KEY not set — skipping market status for', exchangeCode);
+    return null;
+  }
+  const url = `https://finnhub.io/api/v1/stock/market-status?exchange=${exchangeCode}&token=${token}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    console.warn(`Finnhub market-status request failed for ${exchangeCode}: ${res.status}`);
+    return null;
+  }
+  const data = await res.json();
+  // Typical shape: { exchange, holiday, isOpen, session, timezone, t }
+  return data;
+}
+
+function formatStatus(status) {
+  if (!status) return 'Status unavailable';
+  if (status.holiday) return `Closed — ${status.holiday}`;
+  return status.isOpen ? 'Open now' : 'Closed now';
+}
+
 async function fetchIndexLevels() {
   // TODO: replace with a real call, e.g.:
   //   const res = await fetch('https://your-data-provider/api/...');
@@ -68,29 +100,42 @@ async function synthesizeNarrative(levels, headlines) {
   };
 }
 
-function buildHtml(template, levels, narrative) {
-  // TODO: replace the placeholder numbers/text in market-briefing.html with
-  // the freshly fetched values. The simplest approach: mark each data slot
-  // in the HTML with an identifiable comment, e.g. <!--SENSEX--> and do a
-  // straightforward string replace here.
-  return template; // unmodified until the TODOs above are filled in
+function buildHtml(template, levels, narrative, marketStatus) {
+  let output = template;
+
+  // This part is REAL and working: swap the two Finnhub placeholder markers
+  // for live text. Everything else (Sensex/Nifty/gold/crude/narrative) is
+  // still a TODO above — see fetchIndexLevels/fetchHeadlines/synthesizeNarrative.
+  output = output.replace('<!--FINNHUB_STATUS_US-->—', formatStatus(marketStatus.us));
+  output = output.replace('<!--FINNHUB_STATUS_L-->—', formatStatus(marketStatus.london));
+
+  // TODO once you fill in fetchIndexLevels/fetchHeadlines/synthesizeNarrative:
+  // add more markers like <!--SENSEX--> in market-briefing.html and replace
+  // them here the same way.
+  return output;
 }
 
 async function main() {
   const templatePath = path.join(__dirname, '..', 'market-briefing.html');
   const template = fs.readFileSync(templatePath, 'utf8');
 
+  const marketStatus = {
+    us: await fetchMarketStatus('US'),
+    london: await fetchMarketStatus('L'),
+  };
+
   const levels = await fetchIndexLevels();
   const headlines = await fetchHeadlines();
   const narrative = await synthesizeNarrative(levels, headlines);
 
-  const output = buildHtml(template, levels, narrative);
+  const output = buildHtml(template, levels, narrative, marketStatus);
   fs.writeFileSync(templatePath, output, 'utf8');
   console.log('Briefing rebuilt at', new Date().toISOString());
+  console.log('Finnhub US status:', marketStatus.us);
+  console.log('Finnhub London status:', marketStatus.london);
 }
 
 main().catch((err) => {
   console.error('Build failed:', err);
   process.exit(1);
 });
-

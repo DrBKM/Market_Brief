@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pre-Market Briefing — Dalal Street Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0B1220;
+    --bg-panel: #101A2C;
+    --line: #24314A;
+    --text: #EDEFF3;
+    --text-dim: #8792A6;
+    --amber: #D9A441;
+    --teal: #3EC9A7;
+    --coral: #E2574C;
+    --focus: #6FA8FF;
+  }
+  :root[data-theme="light"]{
+    --bg: #F4F5F7;
+    --bg-panel: #FFFFFF;
+    --line: #DADFE7;
+    --text: #12161F;
+    --text-dim: #5B6472;
+    --amber: #9A6B14;
+    --teal: #0E8F71;
+    --coral: #B23428;
+    --focus: #2B5FCC;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Sans Condensed', system-ui, sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .num{font-family:'IBM Plex Mono', ui-monospace, monospace;}
+  a{color:var(--focus);}
+  ::selection{background:var(--amber); color:#0B1220;}
+
+  /* ===== Gate ===== */
+  #gate{
+    position:fixed; inset:0; z-index:50;
+    background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+    padding:24px;
+  }
+  #gate .box{
+    width:100%; max-width:360px;
+    border:1px solid var(--line);
+    background:var(--bg-panel);
+    padding:32px 28px;
+  }
+  #gate h1{
+    font-size:15px; letter-spacing:.04em; margin:0 0 4px;
+    color:var(--text-dim); font-weight:500; text-transform:uppercase;
+  }
+  #gate h2{
+    font-size:22px; margin:0 0 22px; font-weight:600;
+  }
+  #gate input{
+    width:100%; padding:11px 12px; margin-bottom:12px;
+    background:var(--bg); border:1px solid var(--line); color:var(--text);
+    font-family:'IBM Plex Mono', monospace; font-size:14px;
+  }
+  #gate input:focus{outline:2px solid var(--focus); outline-offset:1px;}
+  #gate button{
+    width:100%; padding:11px 12px; background:var(--amber); color:#171008;
+    border:none; font-weight:600; font-size:14px; cursor:pointer;
+    font-family:inherit;
+  }
+  #gate button:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+  #gate .err{color:var(--coral); font-size:13px; height:18px; margin-top:8px;}
+  #gate .note{color:var(--text-dim); font-size:12px; margin-top:18px; line-height:1.6;}
+
+  /* ===== App shell ===== */
+  #app{display:none;}
+  header.masthead{
+    border-bottom:1px solid var(--line);
+    padding:18px 24px 16px;
+    display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px;
+    max-width:1180px; margin:0 auto;
+  }
+  header.masthead .brand{font-size:13px; letter-spacing:.08em; color:var(--text-dim); text-transform:uppercase;}
+  header.masthead h1{font-size:26px; margin:2px 0 0; font-weight:700;}
+  header.masthead .meta{font-size:12.5px; color:var(--text-dim); text-align:right;}
+  header.masthead .live{color:var(--teal);}
+  header.masthead .live::before{
+    content:''; display:inline-block; width:7px; height:7px; border-radius:50%;
+    background:var(--teal); margin-right:6px; animation:pulse 1.8s infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+  @media (prefers-reduced-motion:reduce){ header.masthead .live::before{animation:none;} }
+
+  /* ticker */
+  .ticker-wrap{
+    border-bottom:1px solid var(--line);
+    background:var(--bg-panel);
+    overflow-x:auto;
+  }
+  .ticker{
+    max-width:1180px; margin:0 auto;
+    display:flex; gap:0;
+    font-family:'IBM Plex Mono', monospace; font-size:13px;
+    white-space:nowrap;
+  }
+  .ticker .item{
+    padding:10px 18px; border-right:1px solid var(--line);
+    display:flex; gap:8px; align-items:baseline;
+  }
+  .ticker .item:last-child{border-right:none;}
+  .ticker .label{color:var(--text-dim); font-family:'IBM Plex Sans Condensed', sans-serif;}
+  .up{color:var(--teal);}
+  .down{color:var(--coral);}
+
+  main{max-width:1180px; margin:0 auto; padding:26px 24px 60px; display:grid; grid-template-columns:1fr 340px; gap:28px;}
+  @media (max-width:860px){ main{grid-template-columns:1fr;} }
+
+  section.card{
+    border:1px solid var(--line); border-top:2px solid var(--amber);
+    padding:20px 22px 22px; margin-bottom:24px; background:var(--bg-panel);
+  }
+  section.card h2{
+    font-size:12.5px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--text-dim); margin:0 0 14px; font-weight:600;
+    display:flex; align-items:baseline; justify-content:space-between;
+  }
+  section.card h2 .n{color:var(--amber); font-family:'IBM Plex Mono',monospace; margin-right:8px;}
+  section.card p{margin:0 0 12px; font-size:15px;}
+  section.card p:last-child{margin-bottom:0;}
+  section.card ul{margin:0; padding-left:18px; font-size:15px;}
+  section.card li{margin-bottom:8px;}
+  section.card li:last-child{margin-bottom:0;}
+  .sub{color:var(--text-dim); font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; margin:16px 0 8px;}
+  .sub:first-child{margin-top:0;}
+
+  .levels{
+    display:flex; gap:0; font-family:'IBM Plex Mono', monospace; font-size:13px;
+    border:1px solid var(--line); margin:14px 0 4px;
+  }
+  .levels div{flex:1; padding:10px 12px; border-right:1px solid var(--line);}
+  .levels div:last-child{border-right:none;}
+  .levels .k{display:block; color:var(--text-dim); font-family:'IBM Plex Sans Condensed', sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;}
+
+  aside .card{margin-bottom:24px;}
+  .stat-row{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:14px;}
+  .stat-row:last-child{border-bottom:none;}
+  .stat-row .v{font-family:'IBM Plex Mono', monospace;}
+
+  .clockcard .clock-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line);}
+  .clockcard .clock-row:last-child{border-bottom:none;}
+  .clockcard .t{font-family:'IBM Plex Mono', monospace; font-size:17px; color:var(--amber);}
+  .clockcard .place{font-size:13.5px;}
+  .clockcard .place small{display:block; color:var(--text-dim); font-size:11px;}
+
+  footer{
+    max-width:1180px; margin:0 auto; padding:0 24px 50px; color:var(--text-dim); font-size:12px; line-height:1.7;
+  }
+  footer .sources{margin-top:6px;}
+  .toggle-theme{
+    background:none; border:1px solid var(--line); color:var(--text-dim);
+    font-size:11px; padding:4px 9px; cursor:pointer; font-family:inherit;
+  }
+  .toggle-theme:focus-visible{outline:2px solid var(--focus);}
+  .disclaimer{
+    border-left:2px solid var(--amber); padding:10px 14px; font-size:12.5px; color:var(--text-dim); margin-top:14px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============== PASSWORD GATE ============== -->
+<div id="gate">
+  <div class="box">
+    <h1>Restricted</h1>
+    <h2>Pre-Market Briefing</h2>
+    <input type="password" id="pw" placeholder="Enter password" autocomplete="off">
+    <button id="pwSubmit" type="button">Unlock</button>
+    <div class="err" id="pwErr"></div>
+    <div class="note">
+      This is a private daily briefing. The password check runs in your browser only —
+      it deters casual visitors but is not real access control, since anyone with the
+      page's source can bypass it. Don't rely on this for genuinely sensitive material;
+      see the setup notes shared alongside this file for stronger options.
+    </div>
+  </div>
+</div>
+
+<!-- ============== APP ============== -->
+<div id="app">
+
+<header class="masthead">
+  <div>
+    <div class="brand">Daily AI Briefing</div>
+    <h1>Pre-Market Desk</h1>
+  </div>
+  <div class="meta">
+    <div class="live">Snapshot generated Thu, 17 Sep 2026 · pre-open IST</div>
+    <div>Cadence target: 8:30 AM IST daily &nbsp;·&nbsp; <button class="toggle-theme" id="themeBtn" type="button">Light mode</button></div>
+  </div>
+</header>
+
+<div class="ticker-wrap">
+  <div class="ticker" id="tickerRow">
+    <div class="item"><span class="label">SENSEX</span><span class="num up">74,336.45 ▲0.45%</span></div>
+    <div class="item"><span class="label">NIFTY 50</span><span class="num up">23,217.60 ▲0.43%</span></div>
+    <div class="item"><span class="label">GIFT NIFTY</span><span class="num down">≈23,159 (gap-down bias)</span></div>
+    <div class="item"><span class="label">USD/INR</span><span class="num">95.94</span></div>
+    <div class="item"><span class="label">GOLD</span><span class="num">$4,320.80/oz</span></div>
+    <div class="item"><span class="label">BRENT/WTI</span><span class="num down">$100–108</span></div>
+    <div class="item"><span class="label">US 10Y</span><span class="num down">4.68%</span></div>
+  </div>
+</div>
+
+<main>
+  <div class="col-main">
+
+    <section class="card">
+      <h2><span><span class="n">01</span>Overnight — Global Events &amp; Sentiment</span></h2>
+      <p>The Fed hiked its policy rate a quarter point to 3.75–4.00% overnight — the first hike in three years, and a unanimous vote. The dot plot came in hawkish, penciling in one more hike before year-end, and Chair Kevin Warsh described the internal debate as a "good family fight" without giving markets a clear signal on what comes next.</p>
+      <p>Wall Street had been higher for most of the session but reversed once the decision and press conference landed: the Dow fell about 1.2%, the S&amp;P 500 gave up roughly 0.45%, and the Nasdaq ended little changed. Treasury yields jumped hard — the 10-year near 4.68% and the 30-year past 5.19%, its highest in about two decades — and the move isn't confined to the US; global sovereign yields have been climbing alongside it.</p>
+      <p>Geopolitics is the other big overnight thread: the US–Iran conflict escalated further, with the US Vice President signaling the war moves into "a new phase" within a month and the Pentagon acknowledging a munitions shortage. Saudi Arabia reportedly cancelled crude cargoes after a pipeline closure, and explosions were reported inside the kingdom — the combination is what's driving crude sharply higher.</p>
+      <p><strong>Net read:</strong> a hawkish Fed, surging bond yields, and a war-driven oil spike is a classic emerging-market headwind combination — it's the backdrop Indian markets open into today.</p>
+    </section>
+
+    <section class="card">
+      <h2><span><span class="n">02</span>Sensex &amp; Nifty — Prior Close and Today's Setup</span></h2>
+      <div class="levels">
+        <div><span class="k">Sensex (16 Sep close)</span><span class="num up">74,336.45 &nbsp;▲332.63 / 0.45%</span></div>
+        <div><span class="k">Nifty 50 (16 Sep close)</span><span class="num up">23,217.60 &nbsp;▲99.00 / 0.43%</span></div>
+      </div>
+      <p>Indices snapped a two-session losing run on Wednesday, helped by FMCG, realty and banking, while IT and pharma lagged — trading stayed cautious ahead of the Fed. That followed a sharp Tuesday reversal (Sensex −777.94 pts / −1.04% to 74,003.82; Nifty −279.50 pts / −1.19% to 23,118.60) when an early rally collapsed on rising crude and US yields.</p>
+      <p><strong>Today:</strong> GIFT Nifty is indicating around 23,159 against Nifty futures' last reference near 23,282 — pointing to a gap-down open. With the Fed outcome now known (and partly pre-priced through the week's selling), the more likely path is a volatile-but-contained session rather than a strong one-way trend, unless crude or yields extend sharply from here.</p>
+      <div class="sub">Option-trade framing</div>
+      <div class="levels">
+        <div><span class="k">Support zone</span><span class="num">~23,000 &nbsp;/&nbsp; 22,960–23,127</span></div>
+        <div><span class="k">Resistance zone</span><span class="num">~23,400–23,450</span></div>
+      </div>
+      <p>Lean toward <strong>range-bound with a negative opening bias</strong> — favouring premium-selling / iron-condor style setups around the above band — and only shift to a trending / directional bias on a decisive close outside it, ideally confirmed by a matching move in crude or yields rather than the open alone.</p>
+      <div class="disclaimer">Educational framing only — not investment advice. Levels are approximate and can shift materially at the open; validate against live quotes before acting.</div>
+    </section>
+
+    <section class="card">
+      <h2><span><span class="n">03</span>Stocks to Watch Today</span></h2>
+      <ul>
+        <li><strong>Highway Infrastructure</strong> — received a Letter of Acceptance from UPEIDA for the Gorakhpur Link Expressway EPC package (a 91.35 km access-controlled expressway in UP).</li>
+        <li><strong>Digilogic Systems</strong> — bagged a ₹2.4 crore Ministry of Defence order to design and supply Automatic Test Equipment for onboard electronic subsystems.</li>
+        <li><strong>Kanco Tea &amp; Industries</strong> — started green-tea leaf manufacturing at its Bamonpookrie Tea Estate factory.</li>
+        <li><strong>Tata Power</strong> — in focus on continued speculation that a Tata Sons listing could unlock holding-company value.</li>
+        <li><strong>Ex-dividend today:</strong> IRCON International, MSTC, Sansera Engineering, Sunteck Realty.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2><span><span class="n">04</span>Gold · Currency · Bonds · Crude</span></h2>
+      <div class="sub">Gold</div>
+      <p>Spot near <strong>$4,320/oz</strong>, easing back from January's record above $5,589. Domestic 22K gold is trading around ₹14,065/gram. Bullion is staying broadly firm — a hawkish-but-uncertain Fed path keeps the inflation-hedge bid alive even as real yields rise.</p>
+      <div class="sub">Currency</div>
+      <p>USD/INR near <strong>95.94</strong>. A firmer dollar plus expensive crude are the two classic pressure points on the rupee this week — worth watching at the open for any outsized gap versus yesterday's close.</p>
+      <div class="sub">Bonds</div>
+      <p>US 10-year yield ~<strong>4.68%</strong>, 30-year above <strong>5.19%</strong> — roughly a 20-year high — as markets price a longer Fed hiking runway. This isn't a US-only move; yields have been climbing across major sovereign markets in sympathy.</p>
+      <div class="sub">Crude</div>
+      <p>Brent/WTI trading in the <strong>$100s</strong> (WTI briefly near $106), driven by the widening US–Iran conflict, a Saudi Arabian pipeline closure, and reported explosions in the kingdom. This is the single biggest swing factor for Indian inflation and the rupee right now — India imports roughly 85% of its crude needs.</p>
+    </section>
+
+    <section class="card">
+      <h2><span><span class="n">05</span>Nasdaq, Wall Street, Europe &amp; Asia</span></h2>
+      <div class="sub">Wall Street (16 Sep close)</div>
+      <div class="levels">
+        <div><span class="k">Dow</span><span class="num down">~51,462 ▼1.21%</span></div>
+        <div><span class="k">S&amp;P 500</span><span class="num down">~7,552–7,586 ▼0.45%</span></div>
+        <div><span class="k">Nasdaq</span><span class="num">little changed</span></div>
+      </div>
+      <p>All three indices were higher intraday before the Fed decision and Chair Warsh's press conference dragged them into the red — a classic "sell the hike" reaction once the hawkish dot plot was digested.</p>
+      <div class="sub">Europe (last close)</div>
+      <div class="levels">
+        <div><span class="k">FTSE 100</span><span class="num down">~10,658 ▼0.37%</span></div>
+        <div><span class="k">DAX</span><span class="num down">~25,402 ▼0.15%</span></div>
+      </div>
+      <div class="sub">Asia (yesterday's close, pre-Fed digestion)</div>
+      <p>Nikkei 225 +0.2–0.7% to the 63,600–63,900 zone, Kospi up over 1%, Hang Seng roughly flat, Shanghai Composite +0.6%. Today's Asian session is likely to be more consolidative as it works through the overnight Fed hike and the fresh leg up in oil.</p>
+    </section>
+
+  </div>
+
+  <aside>
+    <div class="card clockcard">
+      <h2>European &amp; London Opens Today</h2>
+      <div class="clock-row">
+        <div class="place">London (LSE)<small>Currently BST (UTC+1)</small></div>
+        <div class="t">12:30 PM IST</div>
+      </div>
+      <div class="clock-row">
+        <div class="place">Frankfurt / Continental Europe<small>Currently CEST (UTC+2)</small></div>
+        <div class="t">12:30 PM IST</div>
+      </div>
+      <p style="font-size:12.5px; color:var(--text-dim); margin-top:12px;">Both currently open at the same IST clock time since UK and continental Europe are one hour apart from each other but the offset cancels out against IST. After European clocks fall back on the last Sunday of October, both opens shift an hour later, to roughly <strong style="color:var(--text);">1:30 PM IST</strong>, until March.</p>
+    </div>
+
+    <div class="card">
+      <h2>Snapshot Levels</h2>
+      <div class="stat-row"><span>Sensex</span><span class="v up">74,336.45</span></div>
+      <div class="stat-row"><span>Nifty 50</span><span class="v up">23,217.60</span></div>
+      <div class="stat-row"><span>GIFT Nifty</span><span class="v down">≈23,159</span></div>
+      <div class="stat-row"><span>USD/INR</span><span class="v">95.94</span></div>
+      <div class="stat-row"><span>Gold (spot)</span><span class="v">$4,320.80</span></div>
+      <div class="stat-row"><span>22K Gold (India)</span><span class="v">₹14,065/g</span></div>
+      <div class="stat-row"><span>Brent/WTI</span><span class="v down">$100–108</span></div>
+      <div class="stat-row"><span>US 10Y Yield</span><span class="v down">4.68%</span></div>
+      <div class="stat-row"><span>US 30Y Yield</span><span class="v down">5.19%+</span></div>
+      <div class="stat-row"><span>Fed Funds Rate</span><span class="v">3.75–4.00%</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Today's Bias</h2>
+      <p style="font-size:14px;">Range-bound, negative-to-neutral opening tilt. Watch crude and the 10-year yield intraday — a sharp extension in either could tip this from range-bound into trending.</p>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <div>Compiled as a personal pre-market reference, aggregating market-wire and financial-media coverage. Intended source set: Moneycontrol, Bloomberg, CNBC Finance, The Economic Times, and the NSE website.</div>
+  <div class="sources">This snapshot was generated once, on request — it is not yet wired to refresh automatically at 8:30 AM daily. See the accompanying setup notes for how to automate that with a scheduled job.</div>
+  <div class="disclaimer">Nothing here is investment advice. Levels, prices and sentiment reads are approximate, sourced from public reporting, and can change quickly — verify against live quotes and your own analysis before trading.</div>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  // ---- Password gate ----
+  // SHA-256 hash of the password. Default is the hash of "changeme".
+  // To set your own password: run in any browser console —
+  //   crypto.subtle.digest('SHA-256', new TextEncoder().encode('yourNewPassword'))
+  //     .then(b => console.log(Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')))
+  // then paste the resulting hex string below.
+  var PW_HASH = "057ba03d6c44104863dc7361fe4578965d1887360f90a0895882e58a6248fc8"; // hash of "changeme" — replace me
+
+  async function sha256Hex(str){
+    var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  }
+
+  var gate = document.getElementById('gate');
+  var app = document.getElementById('app');
+  var pwInput = document.getElementById('pw');
+  var pwBtn = document.getElementById('pwSubmit');
+  var pwErr = document.getElementById('pwErr');
+
+  function unlock(){
+    gate.style.display = 'none';
+    app.style.display = 'block';
+    try { sessionStorage.setItem('briefingUnlocked', '1'); } catch(e){}
+  }
+
+  async function tryUnlock(){
+    var val = pwInput.value || '';
+    try {
+      var hash = await sha256Hex(val);
+      if (hash === PW_HASH) {
+        unlock();
+      } else {
+        pwErr.textContent = 'Incorrect password.';
+      }
+    } catch(e){
+      // Fallback if crypto.subtle is unavailable (very old browser / non-https context)
+      if (val === 'changeme') { unlock(); } else { pwErr.textContent = 'Incorrect password.'; }
+    }
+  }
+
+  pwBtn.addEventListener('click', tryUnlock);
+  pwInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') tryUnlock(); });
+
+  try {
+    if (sessionStorage.getItem('briefingUnlocked') === '1') { unlock(); }
+  } catch(e){}
+
+  // ---- Theme toggle ----
+  var themeBtn = document.getElementById('themeBtn');
+  function applyTheme(t){
+    if (t === 'light') { document.documentElement.setAttribute('data-theme','light'); themeBtn.textContent = 'Dark mode'; }
+    else { document.documentElement.removeAttribute('data-theme'); themeBtn.textContent = 'Light mode'; }
+  }
+  themeBtn.addEventListener('click', function(){
+    var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    var next = isLight ? 'dark' : 'light';
+    applyTheme(next);
+    try { localStorage.setItem('briefingTheme', next); } catch(e){}
+  });
+  try {
+    var saved = localStorage.getItem('briefingTheme');
+    if (saved) applyTheme(saved);
+  } catch(e){}
+})();
+</script>
+
+</body>
+</html>

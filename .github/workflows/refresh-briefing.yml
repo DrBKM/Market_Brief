@@ -44,10 +44,16 @@ jobs:
       - name: Build fresh briefing
         run: node scripts/build-briefing.js
         env:
-          # Put any API keys here as GitHub Actions "Secrets", never hard-coded:
-          # NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
-          # ALPHAVANTAGE_KEY: ${{ secrets.ALPHAVANTAGE_KEY }}
-          PLACEHOLDER: 'set-your-secrets-in-repo-settings'
+          # FINNHUB_API_KEY powers the live US/London market-open-or-closed
+          # status (real, working code in build-briefing.js). Get a free key
+          # at https://finnhub.io/register, then add it here as a GitHub
+          # Actions secret: repo Settings -> Secrets and variables -> Actions
+          # -> New repository secret -> name it FINNHUB_API_KEY.
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          # Everything else (Sensex/Nifty/gold/crude/narrative) is still a
+          # TODO in build-briefing.js — add more secrets here once you wire
+          # those up, e.g.:
+          # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Commit and push if changed
         run: |

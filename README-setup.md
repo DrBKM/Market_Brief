@@ -33,7 +33,29 @@ in the comment above it (compute a SHA-256 hash of your new password in
 any browser console and paste it in). The current placeholder password is
 `changeme` — change it before sharing the link with anyone.
 
-## 3. Automating the daily refresh
+## 3. The Finnhub market-status piece (real, working)
+
+`build-briefing.js` now has a genuinely working integration with Finnhub's
+free `/stock/market-status` endpoint — this is the one piece of automation
+that isn't a TODO placeholder. It's important to know exactly what it does:
+
+- It tells you whether the **US** (NYSE/Nasdaq) and **London** (LSE)
+  exchanges are open **right now**, at the moment the job runs.
+- It does **not** return Sensex, Nifty, gold, crude, USD/INR, or bond yield
+  values — that free endpoint has no price data at all, only open/closed
+  status. Those numbers still need a different source (see section 4).
+
+To use it:
+1. Sign up for a free key at <https://finnhub.io/register>.
+2. In your repo: Settings → Secrets and variables → Actions → New repository
+   secret → name it `FINNHUB_API_KEY`, paste your key, save.
+3. Once the scheduled workflow (below) runs, it'll swap the two placeholder
+   dashes in the "Market Status" card for "Open now" / "Closed now" text.
+4. You can test it manually any time from the repo's **Actions** tab →
+   select "Refresh daily market briefing" → **Run workflow** — no need to
+   wait for the schedule.
+
+## 4. Automating the rest (still TODO)
 
 `refresh-briefing.yml` (put it at `.github/workflows/refresh-briefing.yml`)
 and `build-briefing.js` (put it at `scripts/build-briefing.js`) are a

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8:30 Desk — Morning Market Briefing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0E13; --panel:#10161D; --panel2:#141C24; --border:#212B35;
+    --ink:#E7EDF3; --muted:#7C8B99; --faint:#4E5C68;
+    --amber:#E8A33D; --blue:#5B9DD9; --green:#3ED18C; --red:#FF5F5F;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Inter',sans-serif; font-size:15px; line-height:1.5;
+    padding-bottom:60px;
+  }
+  h1,h2,h3,.num{font-family:'Barlow Condensed',sans-serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  header{
+    border-bottom:1px solid var(--border); padding:18px 28px;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;
+    position:sticky; top:0; background:rgba(10,14,19,0.96); backdrop-filter:blur(6px); z-index:10;
+  }
+  .brand h1{font-size:26px; font-weight:700; letter-spacing:0.3px;}
+  .brand span{color:var(--amber);}
+  .brand p{color:var(--muted); font-size:13px; margin-top:2px;}
+  .clockbar{display:flex; align-items:center; gap:22px; font-family:'IBM Plex Mono',monospace; font-size:13px;}
+  .clockbar .item{display:flex; flex-direction:column; align-items:flex-end;}
+  .clockbar .lbl{color:var(--faint); font-size:10px; letter-spacing:0.5px;}
+  .clockbar .val{color:var(--ink); font-size:15px;}
+  #refreshDot{width:7px; height:7px; border-radius:50%; background:var(--green); display:inline-block; margin-right:6px; animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:0.3;}}
+
+  .keybar{padding:10px 28px; border-bottom:1px solid var(--border); background:var(--panel2);
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:13px; color:var(--muted);}
+  .keybar input{background:var(--bg); border:1px solid var(--border); color:var(--ink); padding:6px 10px;
+    border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:12px; width:260px;}
+  .keybar button{background:var(--amber); border:none; color:#181205; font-weight:600; padding:7px 14px;
+    border-radius:4px; cursor:pointer; font-size:12px;}
+  .keybar button:hover{opacity:0.85;}
+
+  main{padding:24px 28px; display:grid; grid-template-columns:repeat(12,1fr); gap:18px; max-width:1400px; margin:0 auto;}
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:18px 20px;}
+  .card h2{font-size:19px; font-weight:600; margin-bottom:4px; display:flex; align-items:center; gap:8px;}
+  .card .sub{color:var(--muted); font-size:12.5px; margin-bottom:14px;}
+  .tag{font-size:10px; padding:2px 7px; border-radius:3px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.3px;}
+  .tag.live{background:rgba(62,209,140,0.12); color:var(--green); border:1px solid rgba(62,209,140,0.3);}
+  .tag.manual{background:rgba(232,163,61,0.12); color:var(--amber); border:1px solid rgba(232,163,61,0.3);}
+
+  .span4{grid-column:span 4;} .span6{grid-column:span 6;} .span8{grid-column:span 8;} .span12{grid-column:span 12;}
+  @media(max-width:900px){.span4,.span6,.span8,.span12{grid-column:span 12;}}
+
+  textarea{width:100%; background:var(--panel2); border:1px solid var(--border); color:var(--ink);
+    border-radius:4px; padding:10px; font-family:'Inter',sans-serif; font-size:13.5px; resize:vertical; min-height:90px; line-height:1.6;}
+  .ticker-row{display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--border); font-size:13.5px;}
+  .ticker-row:last-child{border-bottom:none;}
+  .ticker-row .name{color:var(--muted);}
+  .ticker-row .price{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:14px;}
+  .up{color:var(--green);} .down{color:var(--red);}
+
+  .idx-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .idx-box{background:var(--panel2); border:1px solid var(--border); border-radius:5px; padding:12px 14px;}
+  .idx-box .lbl{color:var(--muted); font-size:12px;}
+  .idx-box .big{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:600; margin:4px 0;}
+  .idx-box .chg{font-family:'IBM Plex Mono',monospace; font-size:13px;}
+
+  select{background:var(--panel2); border:1px solid var(--border); color:var(--ink); padding:6px 10px; border-radius:4px; font-size:13px;}
+  .bias-badge{display:inline-block; padding:5px 12px; border-radius:4px; font-family:'Barlow Condensed'; font-weight:600; font-size:16px; letter-spacing:0.4px;}
+  .bias-range{background:rgba(91,157,217,0.15); color:var(--blue); border:1px solid rgba(91,157,217,0.35);}
+  .bias-trend{background:rgba(232,163,61,0.15); color:var(--amber); border:1px solid rgba(232,163,61,0.35);}
+
+  .stock-list{list-style:none;}
+  .stock-list li{padding:8px 0; border-bottom:1px solid var(--border); font-size:13.5px; display:flex; justify-content:space-between;}
+  .stock-list li:last-child{border-bottom:none;}
+  .stock-list input[type=text]{background:transparent; border:none; color:var(--ink); font-size:13.5px; width:60%;}
+
+  .open-countdown{display:flex; gap:14px; margin-top:10px;}
+  .oc-box{flex:1; background:var(--panel2); border:1px solid var(--border); border-radius:5px; padding:12px; text-align:center;}
+  .oc-box .mkt{font-size:13px; color:var(--muted);}
+  .oc-box .time{font-family:'IBM Plex Mono',monospace; font-size:20px; margin:4px 0;}
+  .oc-box .status{font-size:11px; font-family:'IBM Plex Mono',monospace;}
+
+  footer{text-align:center; color:var(--faint); font-size:12px; padding:24px; border-top:1px solid var(--border); margin-top:10px;}
+  a{color:var(--blue); text-decoration:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>8:30 <span>Desk</span></h1>
+    <p>Pre-market briefing for Indian equity &amp; option traders</p>
+  </div>
+  <div class="clockbar">
+    <div class="item"><span class="lbl">IST NOW</span><span class="val" id="istClock">--:--:--</span></div>
+    <div class="item"><span class="lbl">LAST REFRESH</span><span class="val"><span id="refreshDot"></span><span id="lastRefresh">--</span></span></div>
+    <div class="item"><span class="lbl">NEXT REFRESH</span><span class="val" id="nextRefresh">5:00</span></div>
+  </div>
+</header>
+
+<div class="keybar">
+  <span>Live US/forex/commodity data via Finnhub free tier.</span>
+  <input type="text" id="apiKey" placeholder="Paste your free Finnhub API key">
+  <button onclick="saveKey()">Save key</button>
+  <span id="keyStatus"></span>
+</div>
+
+<main>
+
+  <section class="card span8">
+    <h2>1 · Overnight Global Events &amp; Sentiment <span class="tag manual">fill in daily</span></h2>
+    <p class="sub">Scan Bloomberg, CNBC, Economic Times overnight wraps before market open. Summarise tone, not just headlines.</p>
+    <textarea id="notesGlobal" placeholder="e.g. Middle East tensions eased overnight; US jobless claims came in below estimate, risk-on tone; oil giving back Tuesday's spike...">US futures modestly higher into Thursday after a soft CPI print; no major geopolitical flare-ups overnight. Overall tone: cautiously risk-on.</textarea>
+  </section>
+
+  <section class="card span4">
+    <h2>2 · Central Banks &amp; Rate Moves <span class="tag manual">fill in daily</span></h2>
+    <p class="sub">Fed / ECB / BoE / RBI decisions, dot-plot shifts, speeches.</p>
+    <textarea id="notesRates" placeholder="e.g. Fed held rates, dovish tilt in minutes; RBI next MPC on...">Fed funds unchanged at last meeting; market pricing ~60% odds of a cut at next FOMC. RBI in pause mode, next MPC pending.</textarea>
+  </section>
+
+  <section class="card span6">
+    <h2>3 · Sensex &amp; Nifty — Today's Read</h2>
+    <p class="sub">Enter yesterday's close manually each morning (NSE/Moneycontrol), then set today's expected behaviour.</p>
+    <div class="idx-grid">
+      <div class="idx-box">
+        <div class="lbl">SENSEX prev close</div>
+        <input class="big mono" id="sensexClose" type="text" value="82,690" style="background:transparent;border:none;color:var(--ink);width:100%;">
+        <div class="chg" id="sensexChg" style="color:var(--muted);">enter chg vs prior day</div>
+      </div>
+      <div class="idx-box">
+        <div class="lbl">NIFTY 50 prev close</div>
+        <input class="big mono" id="niftyClose" type="text" value="25,330" style="background:transparent;border:none;color:var(--ink);width:100%;">
+        <div class="chg" id="niftyChg" style="color:var(--muted);">enter chg vs prior day</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;">
+      <label class="sub" style="display:block; margin-bottom:6px;">Today's expected regime</label>
+      <select id="regime" onchange="updateBias()">
+        <option value="range">Range-bound</option>
+        <option value="trend-up">Trending up</option>
+        <option value="trend-down">Trending down</option>
+        <option value="volatile">Volatile / event-driven</option>
+      </select>
+      <div style="margin-top:10px;"><span class="bias-badge bias-range" id="biasBadge">RANGE-BOUND</span></div>
+      <p class="sub" style="margin-top:10px;" id="biasNote">Option trade lean: favour premium-selling strategies — iron condor / short strangle around expected range, with defined-risk wings given event risk.</p>
+    </div>
+  </section>
+
+  <section class="card span6">
+    <h2>4 · Stocks to Watch <span class="tag manual">edit list</span></h2>
+    <p class="sub">Names with overnight news, results, or unusual options activity.</p>
+    <ul class="stock-list" id="watchList">
+      <li><input type="text" value="RELIANCE — Q results due, watch guidance"><span class="mono muted">—</span></li>
+      <li><input type="text" value="HDFCBANK — FII flow data release today"><span class="mono muted">—</span></li>
+      <li><input type="text" value="TCS — Nasdaq tech read-through overnight"><span class="mono muted">—</span></li>
+      <li><input type="text" value="ONGC / OIL — crude move overnight"><span class="mono muted">—</span></li>
+    </ul>
+  </section>
+
+  <section class="card span6">
+    <h2>5 · Gold, Currency, Bonds, Crude <span class="tag live" id="commodTag">live · finnhub</span></h2>
+    <p class="sub">Auto-refreshes every 5 minutes once an API key is saved.</p>
+    <div class="ticker-row"><span class="name">Gold (XAU/USD)</span><span class="price" id="q_gold">—</span></div>
+    <div class="ticker-row"><span class="name">Crude (WTI, USO proxy)</span><span class="price" id="q_oil">—</span></div>
+    <div class="ticker-row"><span class="name">USD/INR</span><span class="price" id="q_usdinr">—</span></div>
+    <div class="ticker-row"><span class="name">DXY (dollar index, UUP proxy)</span><span class="price" id="q_dxy">—</span></div>
+    <textarea id="notesPolicy" placeholder="Govt policy sentiment — budget signals, RBI liquidity stance, import duty changes..." style="margin-top:12px;">No major new fiscal announcements overnight; RBI liquidity stance neutral.</textarea>
+  </section>
+
+  <section class="card span6">
+    <h2>6 · Global Markets <span class="tag live" id="globalTag">live · finnhub</span></h2>
+    <p class="sub">Wall Street close, Asia overnight, Europe/London pre-open countdown.</p>
+    <div class="ticker-row"><span class="name">Nasdaq 100 (QQQ)</span><span class="price" id="q_nasdaq">—</span></div>
+    <div class="ticker-row"><span class="name">S&amp;P 500 (SPY)</span><span class="price" id="q_spx">—</span></div>
+    <div class="ticker-row"><span class="name">Nikkei 225 (EWJ proxy)</span><span class="price" id="q_nikkei">—</span></div>
+    <div class="ticker-row"><span class="name">Hang Seng (FXI proxy)</span><span class="price" id="q_hsi">—</span></div>
+    <div class="open-countdown">
+      <div class="oc-box">
+        <div class="mkt">European markets</div>
+        <div class="time mono" id="cdEurope">--:--:--</div>
+        <div class="status" id="stEurope">to open · 12:30 PM IST</div>
+      </div>
+      <div class="oc-box">
+        <div class="mkt">London (LSE)</div>
+        <div class="time mono" id="cdLondon">--:--:--</div>
+        <div class="status" id="stLondon">to open · 1:30 PM IST</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card span12">
+    <h2>Sources for manual review each morning</h2>
+    <p class="sub">Open these before 8:30 to fill in the panels above.</p>
+    <div style="display:flex; gap:18px; flex-wrap:wrap; font-size:13.5px;">
+      <a href="https://www.moneycontrol.com/" target="_blank">moneycontrol.com →</a>
+      <a href="https://www.bloomberg.com/markets" target="_blank">Bloomberg Markets →</a>
+      <a href="https://www.cnbc.com/finance/" target="_blank">CNBC Finance →</a>
+      <a href="https://economictimes.indiatimes.com/markets" target="_blank">Economic Times Markets →</a>
+      <a href="https://www.nseindia.com/" target="_blank">NSE India →</a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Built as a static GitHub Pages dashboard · quotes via <a href="https://finnhub.io" target="_blank">Finnhub</a> free tier ·
+  Sensex/Nifty, news &amp; sentiment fields are entered manually (no free live NSE/news API exists) ·
+  Not financial advice.
+</footer>
+
+<script>
+// ---------- Clock ----------
+function pad(n){return n.toString().padStart(2,'0');}
+function updateClock(){
+  const now = new Date();
+  const ist = new Date(now.toLocaleString('en-US',{timeZone:'Asia/Kolkata'}));
+  document.getElementById('istClock').textContent = pad(ist.getHours())+':'+pad(ist.getMinutes())+':'+pad(ist.getSeconds());
+  updateCountdown(ist, 'cdEurope','stEurope',12,30,'to open · 12:30 PM IST','open now');
+  updateCountdown(ist, 'cdLondon','stLondon',13,30,'to open · 1:30 PM IST','open now');
+}
+function updateCountdown(ist, elId, stId, hh, mm, preLabel, openLabel){
+  let target = new Date(ist); target.setHours(hh,mm,0,0);
+  let diff = target - ist;
+  const el = document.getElementById(elId), st = document.getElementById(stId);
+  if(diff < 0 && diff > -6*3600*1000){ el.textContent='OPEN'; st.textContent=openLabel; return; }
+  if(diff < 0) diff += 24*3600*1000;
+  const h=Math.floor(diff/3600000), m=Math.floor((diff%3600000)/60000), s=Math.floor((diff%60000)/1000);
+  el.textContent = pad(h)+':'+pad(m)+':'+pad(s);
+  st.textContent = preLabel;
+}
+setInterval(updateClock,1000); updateClock();
+
+// ---------- Bias badge ----------
+function updateBias(){
+  const v = document.getElementById('regime').value;
+  const badge = document.getElementById('biasBadge');
+  const note = document.getElementById('biasNote');
+  const map = {
+    'range': ['RANGE-BOUND','bias-range','Option trade lean: favour premium-selling — iron condor / short strangle around expected range, defined-risk wings.'],
+    'trend-up': ['TRENDING UP','bias-trend','Option trade lean: bull call spread or long calls on strength; avoid naked short puts near support break.'],
+    'trend-down': ['TRENDING DOWN','bias-trend','Option trade lean: bear put spread or long puts; avoid naked short calls into resistance.'],
+    'volatile': ['VOLATILE / EVENT-DRIVEN','bias-trend','Option trade lean: long straddle/strangle for a directional breakout, or stay flat into the event and trade the resolution.']
+  };
+  const [txt,cls,msg] = map[v];
+  badge.textContent = txt;
+  badge.className = 'bias-badge '+cls;
+  note.textContent = msg;
+}
+
+// ---------- Finnhub live quotes ----------
+const SYMS = {gold:'OANDA:XAU_USD', oil:'USO', usdinr:'OANDA:USD_INR', dxy:'UUP', nasdaq:'QQQ', spx:'SPY', nikkei:'EWJ', hsi:'FXI'};
+function saveKey(){
+  const k = document.getElementById('apiKey').value.trim();
+  if(k){ localStorage.setItem('finnhub_key', k); document.getElementById('keyStatus').textContent='saved ✓'; fetchAll(); }
+}
+function loadKey(){
+  const k = localStorage.getItem('finnhub_key');
+  if(k){ document.getElementById('apiKey').value = k; document.getElementById('keyStatus').textContent='saved ✓'; }
+  return k;
+}
+async function fetchQuote(symbol){
+  const key = localStorage.getItem('finnhub_key');
+  if(!key) return null;
+  try{
+    const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${key}`);
+    if(!res.ok) return null;
+    return await res.json();
+  }catch(e){ return null; }
+}
+function renderQuote(elId, data){
+  const el = document.getElementById(elId);
+  if(!data || data.c === undefined || data.c === 0){ el.textContent = 'n/a'; el.className='price'; return; }
+  const chg = data.dp;
+  const dir = chg >= 0 ? 'up' : 'down';
+  const arrow = chg >= 0 ? '▲' : '▼';
+  el.innerHTML = data.c.toFixed(2) + ` <span class="${dir}">${arrow} ${Math.abs(chg).toFixed(2)}%</span>`;
+  el.className = 'price mono';
+}
+async function fetchAll(){
+  const key = localStorage.getItem('finnhub_key');
+  if(!key){ return; }
+  for(const [id,sym] of Object.entries(SYMS)){
+    const d = await fetchQuote(sym);
+    renderQuote('q_'+id, d);
+  }
+  const now = new Date();
+  const ist = new Date(now.toLocaleString('en-US',{timeZone:'Asia/Kolkata'}));
+  document.getElementById('lastRefresh').textContent = pad(ist.getHours())+':'+pad(ist.getMinutes())+':'+pad(ist.getSeconds());
+}
+
+// ---------- 5-minute refresh cycle ----------
+let secsLeft = 300;
+function tickRefresh(){
+  secsLeft--;
+  if(secsLeft <= 0){ fetchAll(); secsLeft = 300; }
+  const m = Math.floor(secsLeft/60), s = secsLeft%60;
+  document.getElementById('nextRefresh').textContent = m+':'+pad(s);
+}
+setInterval(tickRefresh, 1000);
+
+// ---------- init ----------
+loadKey();
+updateBias();
+fetchAll();
+</script>
+</body>
+</html>

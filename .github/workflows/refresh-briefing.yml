@@ -1,0 +1,42 @@
+name: Morning Market Briefing
+
+on:
+  schedule:
+    # 8:15 AM IST = 2:45 UTC, Monday–Friday. GitHub's scheduler can run a
+    # few minutes late during peak load, so this targets 8:15 to comfortably
+    # land before 8:30. India does not observe DST, so this offset is fixed.
+    - cron: '45 2 * * 1-5'
+  workflow_dispatch: {}   # lets you trigger a run manually from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  build-briefing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate briefing
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/generate_briefing.py
+
+      - name: Commit updated briefing.json
+        run: |
+          git config user.name "briefing-bot"
+          git config user.email "actions@github.com"
+          git add data/briefing.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-update morning briefing $(date -u +%F)"
+            git push
+          fi
